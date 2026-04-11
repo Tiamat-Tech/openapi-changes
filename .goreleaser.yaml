@@ -5,16 +5,24 @@ before:
     # You may remove this if you don't use go modules.
     - go mod tidy
 builds:
-  - env:
+  - id: default
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
       - windows
-      - darwin
     goarch:
       - amd64
       - arm64
       - "386"
+  - id: darwin
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
 archives:
   - name_template: >-
       {{ .ProjectName }}_
@@ -32,6 +40,21 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+notarize:
+  macos:
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids:
+        - darwin
+      sign:
+        certificate: "{{.Env.MACOS_SIGN_P12}}"
+        password: "{{.Env.MACOS_SIGN_PASSWORD}}"
+      notarize:
+        issuer_id: "{{.Env.MACOS_NOTARY_ISSUER_ID}}"
+        key_id: "{{.Env.MACOS_NOTARY_KEY_ID}}"
+        key: "{{.Env.MACOS_NOTARY_KEY}}"
+        wait: true
+        timeout: 20m
+
 homebrew_casks:
   - repository:
       owner: pb33f
@@ -41,10 +64,8 @@ homebrew_casks:
       name: goreleaserbot
       email: goreleaser@quobix.com
 
-    homepage: "https://pb33f.io/openapi-changes"
-    description: "The worlds sexiest OpenAPI diffing and change detection engine"
-
-    binary: openapi-changes
+    homepage: "https://pb33f.io/openapi-changes/"
+    description: "The worlds most powerful OpenAPI diffing and change detection engine"
 
 snapshot:
   version_template: "{{ .Tag }}"
